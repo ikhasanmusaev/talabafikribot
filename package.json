@@ -1,0 +1,28 @@
+{
+  "name": "talabafikribot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "dotenv": "^8.1.0",
+    "telegraf": "^3.32.0",
+    "telegraf-session-local": "^1.0.2",
+    "ts-node": "^8.4.1",
+    "typescript": "^3.6.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ikhasanmusaev/talabafikribot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ikhasanmusaev/talabafikribot/issues"
+  },
+  "homepage": "https://github.com/ikhasanmusaev/talabafikribot#readme"
+}
