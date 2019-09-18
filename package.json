@@ -5,14 +5,16 @@
   "main": "index.js",
   "dependencies": {
     "dotenv": "^8.1.0",
+    "nodemon": "^1.19.2",
     "telegraf": "^3.32.0",
     "telegraf-session-local": "^1.0.2",
+    "telegraf-session-redis": "^5.1.0",
     "ts-node": "^8.4.1",
     "typescript": "^3.6.3"
   },
   "devDependencies": {},
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

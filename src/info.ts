@@ -1,88 +1,121 @@
 import bot from "./bot";
 
-const LocalSession = require('telegraf-session-local');
-
-// bot.use((new LocalSession({ database: 'example_db.json' })).middleware());
-const Telegraf = require('telegraf');
-const session = require('telegraf/session');
+const RedisSession = require('telegraf-session-redis');
+const Markup = require('telegraf/markup');
 const Stage = require('telegraf/stage');
 const Scene = require('telegraf/scenes/base');
-const { leave } = Stage;
+const {leave} = Stage;
 
-const property = 'data';
-
-const localSession = new LocalSession({
-    database: 'example_db.json',
-    property: 'session',
-    storage: LocalSession.storageFileAsync,
-    format: {
-        serialize: (obj) => JSON.stringify(obj, null, 2), // null & 2 for pretty-formatted JSON
-        deserialize: (str) => JSON.parse(str),
-    },
-    state: { messages: [] }
+const session = new RedisSession({
+    store: {
+        host: process.env.TELEGRAM_SESSION_HOST || '127.0.0.1',
+        port: process.env.TELEGRAM_SESSION_PORT || 6379
+    }
 });
 
-localSession.DB.then(DB => {
-    console.log('Current LocalSession DB:', DB.value());
-    // console.log(DB.get('sessions').getById('1:1').value())
-});
+bot.use(session);
 
-bot.use(localSession.middleware(property));
-
-// bot.on('text', (ctx, next) => {
-//     ctx[property].counter = ctx[property].counter || 0;
-//     ctx[property].counter++;
-//     ctx.replyWithMarkdown(`Counter updated, new value: \`${ctx[property].counter}\``);
-//     ctx[property + 'DB'].get('messages').push([ctx.message]).write();
-//     // `property`+'DB' is a name of property which contains lowdb instance, default = `sessionDB`, in current example = `dataDB`
-//     // ctx.dataDB.get('messages').push([ctx.message]).write()
-//
-//     return next()
-// });
-
-bot.command('/stats', (ctx) => {
-    let msg = `Using session object from [Telegraf Context](http://telegraf.js.org/context.html) (\`ctx\`), named \`${property}\`\n`;
-    msg += `Database has \`${ctx[property].counter}\` messages from @${ctx.from.username || ctx.from.id}`;
-    ctx.replyWithMarkdown(msg)
-});
-bot.command('/remove', (ctx) => {
-    ctx.replyWithMarkdown(`Removing session from database: \`${JSON.stringify(ctx[property])}\``);
-    // Setting session to null, undefined or empty object/array will trigger removing it from database
-    ctx[property] = null
-});
-
-
-
-// Greeter scene
 const anketa = new Scene('anketa');
+const question1 = new Scene('question1');
+const question2 = new Scene('question2');
+const question3 = new Scene('question3');
+
 anketa.enter((ctx) => {
-    ctx.reply(`Marhamat ismingizni kiriting.`);
-
-});
-anketa.leave((ctx) => ctx.reply('Bye'));
-anketa.hears(/hi/gi, leave());
-// anketa.on('message', (ctx) => ctx.reply('Send `hi`'));
-anketa.on('text', (ctx, next) => {
-    ctx[property].counter = ctx[property].counter || 0;
-    ctx[property].counter++;
-    ctx.replyWithMarkdown(`Counter updated, new value: \`${ctx[property].counter}\``);
-    ctx[property + 'DB'].get('messages').push([ctx.message]).write();
-    // `property`+'DB' is a name of property which contains lowdb instance, default = `sessionDB`, in current example = `dataDB`
-    // ctx.dataDB.get('messages').push([ctx.message]).write()
-
-    return next()
+    ctx.reply(`Marhamat, F.I.O.ingizni kiriting.`);
 });
 
-// Create scene manager
+anketa.on('text', (ctx) => {
+    const name = ctx.message.text;
+
+    if (name.length > 3) {
+        ctx.session.name = name;
+        ctx.scene.enter('question1');
+    } else {
+        ctx.reply('Iltimos 3 dan kop bolsin')
+    }
+});
+
+
+question1.enter((ctx) => {
+    ctx.reply(`Marhamat, kasbingizni kiriting.`);
+});
+
+question1.on('text', (ctx) => {
+    const profession = ctx.message.text;
+
+    if (profession.length > 3) {
+        ctx.session.profession = profession;
+        ctx.scene.enter('question2');
+    } else {
+        ctx.reply('Iltimos 3 dan kop bolsin')
+    }
+});
+
+question2.enter((ctx) => {
+    ctx.reply(`Marhamat, o'qish yoki ish joyingizni kiriting.`);
+});
+
+question2.on('text', (ctx) => {
+    const university = ctx.message.text;
+
+    if (university.length > 3) {
+        ctx.session.university = university;
+        ctx.scene.enter('question3');
+    } else {
+        ctx.reply('Iltimos 3 dan kop bolsin')
+    }
+});
+
+const cities: string[][] = [
+    [`Qoraqalpog'iston Respublikasi`],
+    [`Toshkent sh.`, `Toshkent v.`],
+    [`Andijon v.`, `Namangan v.`, `Farg'ona v.`],
+    [`Qashqadaryo v.`, `Surxandaryo v.`],
+    [`Samarqand v.`, `Buxoro v.`, `Navoiy v.`],
+    [`Xorazm v.`, `Jizzax v.`, `Sirdaryo v.`]
+];
+
+const plainCities = cities.reduce((arr, currRow) => {
+    arr.push(...currRow);
+    return arr;
+}, []);
+
+question3.enter((ctx) => {
+    ctx.reply(`Qaysi viloyatdansiz?`);
+    return ctx.reply(' Marhamat, tanlang.', Markup
+        .keyboard(cities)
+        .oneTime()
+        .resize()
+        .extra()
+    )
+});
+
+question3.on('text', (ctx) => {
+    const region = ctx.message.text;
+
+    if (plainCities.includes(region)) {
+        ctx.session.region = region;
+        return leave();
+    } else {
+        ctx.reply('Iltimos tanlang')
+    }
+});
+
+question3.leave(ctx => {
+    ctx.reply("Ma'lumotlaringiz uchun Rahmat!");
+    ctx.reply(`Devoleped by @ikhasanmusaev`)
+});
+
 const stage = new Stage();
 stage.command('cancel', leave());
-
-// Scene registration
 stage.register(anketa);
+stage.register(question1);
+stage.register(question2);
+stage.register(question3);
 
-// const bot = new Telegraf(process.env.BOT_TOKEN);
-bot.use(session());
 bot.use(stage.middleware());
-bot.command('anketa', (ctx) => ctx.scene.enter('anketa'));
+bot.command('anketa', (ctx) => {
+
+});
 
 bot.startPolling();
