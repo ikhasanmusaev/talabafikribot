@@ -1,6 +1,5 @@
 const Markup = require('telegraf/markup');
 import bot from "./bot";
-import { askName } from "./info";
 
 require('dotenv').config();
 
@@ -23,9 +22,9 @@ bot.start(async (ctx) =>{
 });
 bot.help((ctx) => ctx.reply('Men Talabalar fikri kanali uchun yordamchi sifatida yaratilganman.'));
 
-bot.hears('📝 Ro`yxatdan o`tish', (ctx) => {
-    askName(ctx);
-});
+// bot.hears('📝 Ro`yxatdan o`tish', (ctx) => {
+//
+// });
 // bot.command('custom', ctx => {
 //     return ctx.reply('Custom buttons keyboard', Markup
 //       .keyboard([
