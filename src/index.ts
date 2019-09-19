@@ -5,6 +5,7 @@ const RedisSession = require('telegraf-session-redis');
 const Markup = require('telegraf/markup');
 const Stage = require('telegraf/stage');
 const Scene = require('telegraf/scenes/base');
+// const TelegrafInlineMenu = require('telegraf-inline-menu');
 const {leave} = Stage;
 
 //redis-sessiya o'rnatish
@@ -96,18 +97,34 @@ question3.enter((ctx) => {
 
 question3.on('text', (ctx) => {
     const region = ctx.message.text;
-
     if (plainCities.includes(region)) {
         ctx.session.region = region;
-        ctx.scene.leave();
+        ctx.scene.enter('question4');
     } else {
         ctx.reply('Iltimos tanlang')
     }
 });
 
-question3.leave(ctx => {
-    ctx.reply("Ma'lumotlaringiz uchun Rahmat! \n Siz muofaqiyatli ro'yhatdan o'tdingiz, marhamat guruhga o'ting!\n");
-    ctx.replyWithHTML(`<a href="https://t.me/joinchat/GxajLkVbXPYIMY3yw6wQXg">Guruhga o'tish</a>`)
+question4.enter((ctx) => {
+    ctx.reply(`Telefon raqamingiz.`);
+});
+
+question4.on('text', (ctx) => {
+    const number = ctx.message.text;
+    if (number.length >= 9 && (number[0] == "+" || number[0] == "9" || number[0] == "6")) {
+        ctx.session.number = number;
+        ctx.scene.leave();
+    } else {
+        ctx.reply(`Iltimos, telefon raqamingizni kiriting.`)
+    }
+});
+
+// const inlineMenu = new TelegrafInlineMenu('urButton');
+
+question4.leave(ctx => {
+    ctx.reply("Ma'lumotlaringiz uchun Rahmat! \n Siz muvaffaqiyatli ro'yxatdan o'tdingiz, marhamat guruhga o'ting!\n");
+    ctx.replyWithHTML(`<a href="https://t.me/joinchat/GxajLkVbXPYIMY3yw6wQXg">Guruhga o'tish</a>`);
+    // return inlineMenu.urlButton(`Guruhga o'tish`, "https://t.me/joinchat/GxajLkVbXPYIMY3yw6wQXg");
 });
 
 const stage = new Stage();
@@ -116,6 +133,7 @@ stage.register(anketa);
 stage.register(question1);
 stage.register(question2);
 stage.register(question3);
+stage.register(question4);
 
 bot.use(stage.middleware());
 bot.command('anketa', (ctx) => {
@@ -124,10 +142,10 @@ bot.command('anketa', (ctx) => {
 
 let REG_BTN = '📝 Ro`yxatdan o`tish';
 
-//
 bot.start(async (ctx) =>{
     await ctx.reply('Salom. Siz ro`yxatdan o`tish botidasiz.' +
                               '\n Ma`lumot olish uchun /help.');
+    ctx.session.id = ctx.from.id;
     return ctx.reply('Sizning ma\'lumotlaringiz sir saqlanishi kafolatlanadi. Marhamat, ro\'yhatdan o\'tish tugmasini bosing', Markup
         .keyboard(
         [REG_BTN])
